@@ -1,7 +1,7 @@
 ---
 ## Front matter
-title: "Отчет по лабораторной работе №"
-subtitle: "-"
+title: "Отчет по лабораторной работе №15"
+subtitle: " Настройка сетевого журналирования"
 author: "Галацан Николай, НПИбд-01-22"
 
 ## Generic otions
@@ -70,74 +70,65 @@ header-includes:
 
 # Цель работы
 
-
+Получение навыков по работе с журналами системных событий.
 
 # Выполнение лабораторной работы
 
-(рис. [-@fig:1]).
+## Настройка сервера сетевого журнала
 
-![Редактирование файла /etc/dovecot/dovecot.conf](image/1.png){#fig:1 width=70%}
+На сервере создаю файл конфигурации сетевого хранения журналов:
+```
+cd /etc/rsyslog.d
+touch netlog-server.conf
+```
+В данном файле включаю прием записей журнала по TCP-порту 514 (рис. [-@fig:1]).
 
-(рис. [-@fig:2])
+![Редактирование файла  конфигурации сетевого хранения журналов `/etc/rsyslog.d/netlog-server.conf`](image/1.png){#fig:1 width=70%}
 
-![Редактирование файла /etc/dovecot/conf.d/10-master.conf](image/2.png){#fig:2 width=70%}
+Перезапускаю службу `rsyslog` и просматриваю прослушиваемые порты, которые связаны со службой (рис. [-@fig:2])
 
- (рис. [-@fig:3])
+![Перезапуск `rsyslog` и просмотр прослушиваемых портов](image/2.png){#fig:2 width=70%}
 
-![Редактирование файла /etc/dovecot/conf.d/10-auth.conf](image/3.png){#fig:3 width=70%}
+На сервере настраиваю межсетевой экран для работы с TCP-портом 514:
+```
+firewall-cmd --add-port=514/tcp
+firewall-cmd --add-port=514/tcp --permanent
 
- (рис. [-@fig:4])
+```
+## Настройка клиента сетевого журнала
+ 
+На клиенте создаю файл конфигурации сетевого хранения журналов:
+```
+cd /etc/rsyslog.d
+touch netlog-client.conf
 
-![Просмотр мониторинга почтовой службы на сервере ](image/4.png){#fig:4 width=70%}
 
-(рис. [-@fig:5]). 
+```
+В данном файле включаю перенаправление сообщений журнала на 514 TCP-порт сервера и перезапускаю службу (рис. [-@fig:3])
 
-![Просмотр почты](image/5.png){#fig:5 width=70%}
+![Редактирование файла конфигурации сетевого хранения журналов на клиенте: включение перенаправления на 514 порт](image/3.png){#fig:3 width=70%}
+
+## Просмотр журнала
+
+На сервере просматриваю один из файлов журнала. Обращаю внимание, что выводятся сообщения как с сервера, так и с клиента (рис. [-@fig:4])
+
+![Просмотр файла журнала на сервере](image/4.png){#fig:4 width=70%}
+
+На сервере под пользователем `ngalacan` запускаю графическую программу для просмотра журналов (рис. [-@fig:5]). 
+
+![Запуск графической программы для просмотра журналов](image/5.png){#fig:5 width=70%}
 
 
-(рис. [-@fig:6]). 
+Устанавливаю просмотрщик журналов системных событий `lnav`:
+```
+dnf -y install lnav
+```
 
-![Редактирование файла /etc/dovecot/conf.d/10-master.conf](image/6.png){#fig:6 width=70%}
 
-(рис. [-@fig:7]). 
+Использую `lnav` для просмотра логов (рис. [-@fig:6]). 
 
-![Изменение конфигурации Postfix](image/7.png){#fig:7 width=70%}
+![Использование `lnav` для просмотра логов](image/6.png){#fig:6 width=70%}
 
-(рис. [-@fig:8]).
-
-![Редактирование файла /etc/postfix/master.cf для проверки аутентификации](image/8.png){#fig:8 width=70%}
-
-(рис. [-@fig:9]).
-
-![Получение строки для аутентификации на клиенте, подключение к SMTP-серверу через `telnet`, проверка аутентификации](image/9.png){#fig:9 width=70%}
-
- (рис. [-@fig:10]).
-
-![Конфигурации Postfix для настройки TLS](image/10.png){#fig:10 width=70%}
-
- (рис. [-@fig:11]).
-
-![Изменение конфигураций для запуска SMTP-сервера на 587-порту](image/11.png){#fig:11 width=70%}
-
- (рис. [-@fig:12])
-
-![Настройка межсетевого экрана и перезапуск Postfix](image/12.png){#fig:12 width=70%}
-
- (рис. [-@fig:13]).
-
-![Проверка подключения и аутентфикации по telnet на клиенте](image/13.png){#fig:13 width=70%}
-
-(рис. [-@fig:14]). 
-
-![Изменение настроек учетной записи в Evolution](image/14.png){#fig:14 width=70%}
-
-(рис. [-@fig:15]).
-
-![Проверка доставки письма в Evolution](image/15.png){#fig:15 width=70%}
-
-(рис. [-@fig:16]).
-
-![Проверка почтового ящика на сервере](image/16.png){#fig:16 width=70%}
 
 ## Внесение изменений в настройки внутреннего окружения виртуальной машины
 
@@ -145,32 +136,101 @@ header-includes:
 
 ```
 cd /vagrant/provision/server
-cp -R /etc/dovecot/dovecot.conf
-	↪ /vagrant/provision/server/mail/etc/dovecot/
-cp -R /etc/dovecot/conf.d/10-master.conf
-	↪ /vagrant/provision/server/mail/etc/dovecot/conf.d/
-cp -R /etc/dovecot/conf.d/10-auth.conf
-	↪ /vagrant/provision/server/mail/etc/dovecot/conf.d/
-mkdir -p /vagrant/provision/server/mail/etc/postfix/
-cp -R /etc/postfix/master.cf /vagrant/provision/server/mail/etc/postfix/
+mkdir -p /vagrant/provision/server/netlog/etc/rsyslog.d
+cp -R /etc/rsyslog.d/netlog-server.conf
+		↪ /vagrant/provision/server/netlog/etc/rsyslog.d
 ```
 
 
-Вношу изменения в файл `/vagrant/provision/server/mail.sh` (рис. [-@fig:17]).
+Вношу изменения в файл `/vagrant/provision/server/netlog.sh` (рис. [-@fig:7]).
 
-![Редактирование mail.sh на сервере](image/17.png){#fig:17 width=70%}
+![Редактирование netlog.sh на сервере](image/7.png){#fig:7 width=70%}
+
+На ВМ `client` перехожу в каталог для внесения изменений в настройки внутреннего окружения и копирую в соответствующие каталоги конфигурационные файлы:
+
+```
+cd /vagrant/provision/client
+mkdir -p /vagrant/provision/client/netlog/etc/rsyslog.d
+cp -R /etc/rsyslog.d/netlog-client.conf
+		↪ /vagrant/provision/client/netlog/etc/rsyslog.d/
+```
 
 
+Создаю и редактирую скрипт `/vagrant/provision/client/netlog.sh` (рис. [-@fig:8]).
 
-На ВМ `client` перехожу в каталог для внесения изменений в настройки внутреннего окружения и редактирую скрипт `/vagrant/provision/client/mail.sh` (рис. [-@fig:18]).
+![Редактирование netlog.sh на клиенте](image/8.png){#fig:8 width=70%}
 
-![Редактирование mail.sh на клиенте](image/18.png){#fig:18 width=70%}
+Для отработки созданных скриптов во время загрузки виртуальных машин `server` и `client` в конфигурационном файле `Vagrantfile` добавляю записи в соответствующих разделах конфигураций для сервера и клиента:
+```
+server.vm.provision "server netlog",
+	type: "shell",
+	preserve_order: true,
+	path: "provision/server/netlog.sh"
+
+client.vm.provision "client netlog",
+	type: "shell",
+	preserve_order: true,
+	path: "provision/client/netlog.sh"
+```
+
 
 # Выводы
 
-
+В результате выполнения работы были приобретены навыки по работе с журналами системных событий.
 
 
 # Ответы на контрольные вопросы
 
+1. Какой модуль `rsyslog` вы должны использовать для приёма сообщений от
+`journald`?
+
+Для приёма сообщений от `journald` следует использовать модуль `imjournal`.
+
+2. Как называется устаревший модуль, который можно использовать для включения приёма сообщений журнала в `rsyslog`?
+
+`imklog`
+
+3. Чтобы убедиться, что устаревший метод приёма сообщений из `journald` в
+`rsyslog` не используется, какой дополнительный параметр следует использовать?
+
+Cледует использовать параметр `“SystemCallFilter[include:omusrmsg.conf?]”` в конфигурационном файле `rsyslog.conf`.
+
+4. В каком конфигурационном файле содержатся настройки, которые позволяют вам настраивать работу журнала?
+
+Настройки, позволяющие настраивать работу журнала, содержатся в конфигурационном файле `rsyslog.conf`.
+
+5. Каким параметром управляется пересылка сообщений из journald в rsyslog?
+
+Пересылка сообщений из `journald` в `rsyslog` управляется параметром
+`“ForwardToSyslog”` в файле конфигурации `journald.conf`.
+
+6. Какой модуль rsyslog вы можете использовать для включения сообщений
+из файла журнала, не созданного rsyslog?
+
+Модуль `rsyslog`, который можно использовать для включения сообщений из
+файла журнала, не созданного `rsyslog`, называется `imfile`.
+
+7. Какой модуль rsyslog вам нужно использовать для пересылки сообщений в
+базу данных MariaDB?
+
+Для пересылки сообщений в базу данных MariaDB следует использовать
+модуль `ommysql`.
+
+8. Какие две строки вам нужно включить в rsyslog.conf, чтобы позволить текущему журнальному серверу получать сообщения через TCP?
+
+Для позволения текущему журнальному серверу получать сообщения через
+TCP нужно включить две строки в `rsyslog.conf`:
+```
+$ModLoad imtcp 
+$InputTCPServerRun 514
+```
+
+9. Как настроить локальный брандмауэр, чтобы разрешить приём сообщений
+журнала через порт TCP 514?
+
+```
+firewall-cmd --add-port=514/tcp
+firewall-cmd --add-port=514/tcp --permanent
+
+```
 
